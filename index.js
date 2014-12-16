@@ -7,12 +7,13 @@ var max_entries = 10;
 
 export function dsp(t) {
   var raw =  womp(t) * rising(t);
-  prev.push(raw);
+  /*prev.push(raw);
   var ret = average(prev);
   if (prev.length > max_entries) {
     arr.shift();
   }
-  return ret;
+  return ret; */
+  return raw;
 }
 
 function average(values) {
