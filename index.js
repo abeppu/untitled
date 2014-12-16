@@ -2,30 +2,15 @@
 /**
  * @name untitled
  */
-var prev = [];
-var max_entries = 10;
+var A = 440;
 
 export function dsp(t) {
-  var raw =  womp(t) * rising(t);
-  /*prev.push(raw);
-  var ret = average(prev);
-  if (prev.length > max_entries) {
-    arr.shift();
-  }
-  return ret; */
-  return raw;
-}
-
-function average(values) {
-  var sum = 0;
-  for(var i=0;i<values.length;i++) {
-    sum += values[i];
-  }
-  return sum/values.length;
+  var raw = backAndForth(t) * (0.8 + womp(3 * quaver/7,t));
+  return smooth(raw);
 }
 
 function smooth(y) {
-  return Math.atan(y);
+  return 2.0 * Math.atan(y)/(Math.PI);
 }
 
 var tempo = 120.0; // bpm
@@ -36,43 +21,102 @@ var A1 = 440;
 
 var halfstep = Math.pow(2, (1/12));
 
-
-
-function womp(t) {
-  var z = (t % quaver) / quaver;
-  return Math.sqrt(0.5 * (1 + Math.cos(z * 2 * Math.PI)));
+function womp(length,t) {
+  var z = (t % length) / length;
+  return Math.sqrt(0.5 * (1 + Math.cos(z * 2 * Math.PI + Math.PI)));
 }
 
-function rising(t) {
-  var length = 2; // seconds
-  var z = t % length;
-  var freq;
-  if(z > length / 2) {
-    freq = 10 * Math.pow(halfstep, z);
+function evenStepMelody(steps, t) {
+  var l = quaver * steps.length;
+  var z = Math.floor( (t % l)/quaver);
+  var raw = womp(t) * atFreq(sine, 220 * Math.pow(halfstep, steps[z]))(t);
+  return smooth(raw);
+}
+
+function variedMelody(notes, t) {
+  var total = 0;
+  for(var i=0;i<notes.length;i++) {
+    total += notes[i]['duration'];
+  }
+  var z = t % total;
+  var soFar = 0;
+  var idx = 0;
+  var freq = 0;
+  for(i=0;i<notes.length;i++) {
+    soFar += notes[i]['duration'];
+    if (soFar > z) {
+      freq = notes[i]['freq'];
+      break;
+    }
+  }
+  var raw = atFreq(sine, freq)(t);
+  return smooth(raw);
+}
+
+function note(length, steps) {
+  var freq = 440 * Math.pow(halfstep, steps);
+  var obj = {};
+  obj.duration = length;
+  obj.freq = freq;
+  return obj;
+}
+
+function lnote(start, length, steps) {
+  var n = note(length, steps);
+  n.start = start;
+  return n;
+}
+
+function polyphonic(notes, t) {
+  var last = 0;
+  for(var i=0;i<notes.length;i++) {
+    last = Math.max(last, notes[i].start + notes[i].duration);
+  }
+  var z = t % last;
+  var sum = 0;
+  for(i=0;i<notes.length;i++) {
+    if (z > notes[i].start && z < (notes[i].start + notes[i].duration)) {
+      sum += atFreq(st, notes[i].freq)(t);
+    }
+  }
+  return smooth(sum);
+}
+
+function maj2(t) {
+  return polyphonic([lnote(0, 2 * quaver, 0), lnote(0, 2 * quaver,-4), lnote(0, 2* quaver, -9)],t);
+}
+
+function min2(t) {
+  return polyphonic([lnote(0, 2 * quaver, 0), lnote(0, 2 * quaver,-5), lnote(0, 2* quaver, -9)],t);
+}
+
+function seven(t) {
+  return polyphonic([lnote(0, 2 * quaver, -1), lnote(0, 2 * quaver, -5), lnote(0,2 * quaver, -7)], t);
+}
+
+function backAndForth(t) {
+  var z = t % 3;
+  if (z > 1.5) {
+    return maj2(t);
   } else {
-    freq = 10 * Math.pow(halfstep, length - z);
+    return min2(t);
   }
-  return atFreq(sine, freq)(t);
 }
 
-function evenStepMelody(steps) {
-  var totalLength = steps.length * quaver;
-  console.log("totalLength => " + totalLength);
-  var fns = [];
-  for (var i=0;i<steps.length;i++) {
-    var freq = 220 * Math.pow(halfstep, steps[i]);
-    fns[i] = atFreq(sine,freq);
-  }
-  return function(t) {
-    var x = (t % totalLength)/quaver;
-    var idx = Math.floor(x);
-    var z = (x % quaver)/quaver;
-    return (1 - Math.cos(z * 2 * Math.PI)) * fns[idx](t);
-  };
+function m1(t) {
+  return variedMelody([note(quaver/2, 1), note(quaver, 5), note(2 * quaver, 3)],t);//, note(quaver/2, 5), note(quaver,9)]);
 }
 
-function scale() {
-  return evenStepMelody([0,2,4,5,7,9,11,12]);
+function maj(t) {
+  return variedMelody([note(quaver/2,0), note(quaver/2,4),note(quaver/2,7),note(quaver,12)], t);
+}
+
+function min(t) {
+  return variedMelody([note(quaver/2,0), note(quaver/2,3),note(quaver/2,7), note(quaver,12)], t);
+}
+
+function scale(t) {
+  return evenStepMelody([0,-8,4,5,7,9,11,12], t);
 }
 
 function sine(z) {
@@ -86,6 +130,14 @@ function atFreq(f, hz) {
     var z = x / period;
     return f(z);
   };
+}
+
+function ss(z) {
+  return sine(z) - square(z);
+}
+
+function st(z) {
+  return (saw(z) - triangle(z)) - sine(z);// * sine(z) - sine(z); 
 }
 
 function square(z) {
