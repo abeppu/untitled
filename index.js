@@ -5,7 +5,7 @@
 
 
 export function dsp(t) {
-  var raw = backAndForth(t) * (0.8 + womp(3 * quaver/7,t));
+  var raw = backAndForth(t) * (0.9+ 0.5 * womp(3 * quaver/7,t));
   return smooth(raw);
 }
 
@@ -99,32 +99,50 @@ function pitchToSteps(pitchString) {
 
 function vnote(start, length, pitch, voice) {
   var l = note(start, length, pitchToSteps(pitch));
-  l.voice = voice;
+  l['voice'] = voice;
   return l;
 }
 
 function polyphonic(notes, t) {
   var last = 0;
-  for(var i=0;i<notes.length;i++) {
+  for (var i = 0; i < notes.length; i++) {
     last = Math.max(last, notes[i].start + notes[i].duration);
   }
   var z = t % last;
   var sum = 0;
-  for(i=0;i<notes.length;i++) {
-    if (z > notes[i].start && z < (notes[i].start + notes[i].duration)) {
-      sum += atFreq(notes[i].voice, notes[i].freq)(t);
+  for (i = 0; i < notes.length; i++) {
+    var note = notes[i];
+    if (z > note.start && z < (note.start + note.duration)) {
+      var voice;
+      
+      if(note.voice){
+        voice = note.voice;
+        console.log("note has voice!:" + note.voice );
+      } else {
+        voice = st;
+      }
+      sum += atFreq(voice, note.freq)(t);
     }
   }
   return smooth(sum);
 }
 
 function maj2(t) {
-  return polyphonic([vnote(0, 2 * quaver, "C4", sine), vnote(0, 2 * quaver,"E4", sine), vnote(0, 2* quaver, "G4", square)],t);
+  return polyphonic([lnote(0, 2 * quaver, pitchToSteps("G#4")), lnote(0, 2 * quaver,-4), lnote(0, 2* quaver, -9)],t);
 }
 
 function min2(t) {
+  return polyphonic([lnote(0, 2 * quaver, 0), lnote(0, 2 * quaver, -5), lnote(0, 2* quaver, -9)],t);
+}
+
+function maj3(t) {
+  return polyphonic([vnote(0, 2 * quaver, "C4", sine), vnote(0, 2 * quaver,"E4", sine), vnote(0, 2* quaver, "G4", square)],t);
+}
+
+function min3(t) {
   return polyphonic([vnote(0, 2 * quaver, "C4", sine), vnote(0, 2 * quaver, "Eb4", sine), vnote(0, 2* quaver, "G4", saw)],t);
 }
+
 
 function seven(t) {
   return polyphonic([lnote(0, 2 * quaver, -1), lnote(0, 2 * quaver, -5), lnote(0,2 * quaver, -7)], t);
@@ -133,7 +151,7 @@ function seven(t) {
 function backAndForth(t) {
   var z = t % 3;
   if (z > 1.5) {
-    return maj2(t);
+    return maj3(t);
   } else {
     return min2(t);
   }
