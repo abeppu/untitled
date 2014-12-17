@@ -1,17 +1,13 @@
 
 /**
+ * @module womp womp
  * @name untitled
  */
 
-
-export function dsp(t) {
-  var raw = backAndForth(t) * (0.9+ 0.5 * womp(3 * quaver/7,t));
-  return smooth(raw);
-}
-
-function smooth(y) {
+export function smooth(y) {
   return 2.0 * Math.atan(y)/(Math.PI);
 }
+
 
 var tempo = 120.0; // bpm
 var quaver = 60 / tempo;
@@ -21,7 +17,7 @@ var A1 = 440;
 
 var halfstep = Math.pow(2, (1/12));
 
-function womp(length,t) {
+export function womp(length,t) {
   var z = (t % length) / length;
   return Math.sqrt(0.5 * (1 + Math.cos(z * 2 * Math.PI + Math.PI)));
 }
@@ -61,7 +57,7 @@ function note(length, steps) {
   return obj;
 }
 
-function lnote(start, length, steps) {
+export function lnote(start, length, steps) {
   var n = note(length, steps);
   n.start = start;
   return n;
@@ -69,7 +65,7 @@ function lnote(start, length, steps) {
 
 
 var A4 = 440;
-function pitchToSteps(pitchString) {
+export function pitchToSteps(pitchString) {
   var name = pitchString[0];
   var num = pitchString[pitchString.length - 1];
   var base = 440;
@@ -99,11 +95,11 @@ function pitchToSteps(pitchString) {
 
 function vnote(start, length, pitch, voice) {
   var l = note(start, length, pitchToSteps(pitch));
-  l['voice'] = voice;
+  l.voice = voice;
   return l;
 }
 
-function polyphonic(notes, t) {
+export function polyphonic(notes, t) {
   var last = 0;
   for (var i = 0; i < notes.length; i++) {
     last = Math.max(last, notes[i].start + notes[i].duration);
@@ -116,7 +112,7 @@ function polyphonic(notes, t) {
       var voice;
       
       if(note.voice){
-        voice = note.voice;
+        voice = voiceFromName(note.voice);
         console.log("note has voice!:" + note.voice );
       } else {
         voice = st;
@@ -127,16 +123,19 @@ function polyphonic(notes, t) {
   return smooth(sum);
 }
 
-function maj2(t) {
-  return polyphonic([lnote(0, 2 * quaver, pitchToSteps("G#4")), lnote(0, 2 * quaver,-4), lnote(0, 2* quaver, -9)],t);
+function voiceFromName(name) {
+  if (name == "sine") {
+    return sine;
+  } else if (name =="square") {
+    return square;
+  } else {
+    console.log("cannot match name " + name);
+  }
 }
 
-function min2(t) {
-  return polyphonic([lnote(0, 2 * quaver, 0), lnote(0, 2 * quaver, -5), lnote(0, 2* quaver, -9)],t);
-}
 
 function maj3(t) {
-  return polyphonic([vnote(0, 2 * quaver, "C4", sine), vnote(0, 2 * quaver,"E4", sine), vnote(0, 2* quaver, "G4", square)],t);
+  return polyphonic([vnote(0, 2 * quaver, "C4", "sine"), vnote(0, 2 * quaver,"f4", "sine"), vnote(0, 2* quaver, "G4", "square")],t);
 }
 
 function min3(t) {
@@ -148,14 +147,7 @@ function seven(t) {
   return polyphonic([lnote(0, 2 * quaver, -1), lnote(0, 2 * quaver, -5), lnote(0,2 * quaver, -7)], t);
 }
 
-function backAndForth(t) {
-  var z = t % 3;
-  if (z > 1.5) {
-    return maj3(t);
-  } else {
-    return min2(t);
-  }
-}
+
 
 function m1(t) {
   return variedMelody([note(quaver/2, 1), note(quaver, 5), note(2 * quaver, 3)],t);//, note(quaver/2, 5), note(quaver,9)]);
