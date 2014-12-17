@@ -2,7 +2,7 @@
 /**
  * @name untitled
  */
-var A = 440;
+
 
 export function dsp(t) {
   var raw = backAndForth(t) * (0.8 + womp(3 * quaver/7,t));
@@ -67,6 +67,42 @@ function lnote(start, length, steps) {
   return n;
 }
 
+
+var A4 = 440;
+function pitchToSteps(pitchString) {
+  var name = pitString[0];
+  var num = pitchString[pitchString.length - 1];
+  var base = 440;
+  var scale = {
+    "C" : -9,
+    "D" : -7,
+    "E" : -5,
+    "F" : -4,
+    "G" : -2,
+    "A" : 0,
+    "B" : 2,
+  };
+  var offset = scale[name];
+  if (pitchString.length == 3) {
+      var modifier = pitchString[1];
+      if (modifier == "#") {
+        offset += 1;
+      } else if(modifier = "b") {
+        offset -= 1;
+      }
+  }
+  if (num != 4) {
+    offset += (num - 4) * 12;
+  }
+  return base * Math.pow(halfstep, offset);
+}
+
+function vnote(start, length, pitch, voice) {
+  var l = note(start, length, pitchToSteps(pitch));
+  l.voice = voice;
+  return l;
+}
+
 function polyphonic(notes, t) {
   var last = 0;
   for(var i=0;i<notes.length;i++) {
@@ -76,18 +112,18 @@ function polyphonic(notes, t) {
   var sum = 0;
   for(i=0;i<notes.length;i++) {
     if (z > notes[i].start && z < (notes[i].start + notes[i].duration)) {
-      sum += atFreq(st, notes[i].freq)(t);
+      sum += atFreq(notes[i].voice, notes[i].freq)(t);
     }
   }
   return smooth(sum);
 }
 
 function maj2(t) {
-  return polyphonic([lnote(0, 2 * quaver, 0), lnote(0, 2 * quaver,-4), lnote(0, 2* quaver, -9)],t);
+  return polyphonic([vnote(0, 2 * quaver, 0, sine), lnote(0, 2 * quaver,-4, sine), lnote(0, 2* quaver, -9, square)],t);
 }
 
 function min2(t) {
-  return polyphonic([lnote(0, 2 * quaver, 0), lnote(0, 2 * quaver,-5), lnote(0, 2* quaver, -9)],t);
+  return polyphonic([lnote(0, 2 * quaver, 0, sine), lnote(0, 2 * quaver,-5, sine), lnote(0, 2* quaver, -9, saw)],t);
 }
 
 function seven(t) {
@@ -119,9 +155,6 @@ function scale(t) {
   return evenStepMelody([0,-8,4,5,7,9,11,12], t);
 }
 
-function sine(z) {
-  return Math.sin(z * Math.PI * 2);
-}
 
 function atFreq(f, hz) {
   return function(t) {
@@ -132,12 +165,22 @@ function atFreq(f, hz) {
   };
 }
 
+
+/** Voices, take a value within a period, zero to 1**/
 function ss(z) {
   return sine(z) - square(z);
 }
 
 function st(z) {
   return (saw(z) - triangle(z)) - sine(z);// * sine(z) - sine(z); 
+}
+
+function sine(z) {
+  return Math.sin(z * Math.PI * 2);
+}
+
+function noize(z) {
+  return Math.random();
 }
 
 function square(z) {
