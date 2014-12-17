@@ -70,7 +70,7 @@ function lnote(start, length, steps) {
 
 var A4 = 440;
 function pitchToSteps(pitchString) {
-  var name = pitString[0];
+  var name = pitchString[0];
   var num = pitchString[pitchString.length - 1];
   var base = 440;
   var scale = {
@@ -87,14 +87,14 @@ function pitchToSteps(pitchString) {
       var modifier = pitchString[1];
       if (modifier == "#") {
         offset += 1;
-      } else if(modifier = "b") {
+      } else if(modifier == "b") {
         offset -= 1;
       }
   }
   if (num != 4) {
     offset += (num - 4) * 12;
   }
-  return base * Math.pow(halfstep, offset);
+  return offset;
 }
 
 function vnote(start, length, pitch, voice) {
@@ -119,11 +119,11 @@ function polyphonic(notes, t) {
 }
 
 function maj2(t) {
-  return polyphonic([vnote(0, 2 * quaver, 0, sine), lnote(0, 2 * quaver,-4, sine), lnote(0, 2* quaver, -9, square)],t);
+  return polyphonic([vnote(0, 2 * quaver, "C4", sine), vnote(0, 2 * quaver,"E4", sine), vnote(0, 2* quaver, "G4", square)],t);
 }
 
 function min2(t) {
-  return polyphonic([lnote(0, 2 * quaver, 0, sine), lnote(0, 2 * quaver,-5, sine), lnote(0, 2* quaver, -9, saw)],t);
+  return polyphonic([vnote(0, 2 * quaver, "C4", sine), vnote(0, 2 * quaver, "Eb4", sine), vnote(0, 2* quaver, "G4", saw)],t);
 }
 
 function seven(t) {
