@@ -22,49 +22,15 @@ export function womp(length,t) {
   return Math.sqrt(0.5 * (1 + Math.cos(z * 2 * Math.PI + Math.PI)));
 }
 
-function evenStepMelody(steps, t) {
-  var l = quaver * steps.length;
-  var z = Math.floor( (t % l)/quaver);
-  var raw = womp(t) * atFreq(sine, 220 * Math.pow(halfstep, steps[z]))(t);
-  return smooth(raw);
-}
-
-function variedMelody(notes, t) {
-  var total = 0;
-  for(var i=0;i<notes.length;i++) {
-    total += notes[i]['duration'];
-  }
-  var z = t % total;
-  var soFar = 0;
-  var idx = 0;
-  var freq = 0;
-  for(i=0;i<notes.length;i++) {
-    soFar += notes[i]['duration'];
-    if (soFar > z) {
-      freq = notes[i]['freq'];
-      break;
-    }
-  }
-  var raw = atFreq(sine, freq)(t);
-  return smooth(raw);
-}
-
-function note(length, steps) {
-  var freq = 440 * Math.pow(halfstep, steps);
-  var obj = {};
-  obj.duration = length;
-  obj.freq = freq;
-  return obj;
-}
-
-export function lnote(start, length, steps) {
-  var n = note(length, steps);
+export function note(start, length, steps) {
+  var n = {};
   n.start = start;
+  n.duration = length;
+  var freq = 440 * Math.pow(halfstep, steps);
+  n.freq = freq;
   return n;
 }
 
-
-var A4 = 440;
 export function pitchToSteps(pitchString) {
   var name = pitchString[0];
   var num = pitchString[pitchString.length - 1];
@@ -93,13 +59,8 @@ export function pitchToSteps(pitchString) {
   return offset;
 }
 
-function vnote(start, length, pitch, voice) {
-  var l = note(start, length, pitchToSteps(pitch));
-  l.voice = voice;
-  return l;
-}
 
-export function polyphonic(notes, t) {
+export function polyphonic(voice, notes, t) {
   var last = 0;
   for (var i = 0; i < notes.length; i++) {
     last = Math.max(last, notes[i].start + notes[i].duration);
@@ -109,14 +70,6 @@ export function polyphonic(notes, t) {
   for (i = 0; i < notes.length; i++) {
     var note = notes[i];
     if (z > note.start && z < (note.start + note.duration)) {
-      var voice;
-      
-      if(note.voice){
-        voice = voiceFromName(note.voice);
-        console.log("note has voice!:" + note.voice );
-      } else {
-        voice = st;
-      }
       sum += atFreq(voice, note.freq)(t);
     }
   }
@@ -185,7 +138,7 @@ function st(z) {
   return (saw(z) - triangle(z)) - sine(z);// * sine(z) - sine(z); 
 }
 
-function sine(z) {
+export function sine(z) {
   return Math.sin(z * Math.PI * 2);
 }
 
@@ -193,7 +146,7 @@ function noize(z) {
   return Math.random();
 }
 
-function square(z) {
+export function square(z) {
   if (z < 0.5) {
     return 1;
   } else {
@@ -205,7 +158,7 @@ function saw(z) {
     return z;
 }
 
-function triangle(z) {
+export function triangle(z) {
   if (z < 0.5) {
     return 2 * z;
   } else {

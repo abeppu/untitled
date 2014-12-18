@@ -2,15 +2,14 @@
 /**
  * test
  */
- import {smooth, womp, lnote, pitchToSteps,polyphonic} from './index';
+ import {smooth, womp, note, sine, square, triangle, pitchToSteps,polyphonic} from './index';
  
  
 var tempo = 120.0; // bpm
 var quaver = 60 / tempo;
 
 export function dsp(t) {
-  var raw = backAndForth(t) * (0.9+ 0.5 * womp(3 * quaver/7,t));
-  return smooth(raw);
+  return  (5 * base(t) + chorus(t)) * ( womp(quaver/4,t));
 }
 
 function backAndForth(t) {
@@ -22,14 +21,27 @@ function backAndForth(t) {
   }
 }
 
-function four(t) {
-  return polyphonic
+function base(t) {
+  var line = [note(0, quaver/2, pitchToSteps("C2")),
+  note(quaver/2, quaver/2, pitchToSteps("Eb2")),
+  note(quaver, quaver/2, pitchToSteps("G2")),
+  note(3*quaver/2, quaver/2, pitchToSteps("C3"))];
+  return polyphonic(sine, line, t)
+}
+
+function chorus(t) {
+  var line = [note(quaver/4, quaver/4, pitchToSteps("G3")),
+              note(7 * quaver/4, quaver/4, pitchToSteps("G3")),
+              note(15 * quaver/4, quaver/4, pitchToSteps("G2"))];
+  return polyphonic(triangle, line, t);
 }
 
 function maj2(t) {
-  return polyphonic([lnote(0, 2 * quaver, pitchToSteps("A4")), lnote(0, 2 * quaver, -4), lnote(0, 2* quaver, -9)],t);
+  return polyphonic(sine, [note(0, 2 * quaver, pitchToSteps("A4")), 
+                    note(0, 2 * quaver, -4), 
+                    note(0, 2* quaver, -9)],t);
 }
 
  function min2(t) {
-  return polyphonic([lnote(0, 2 * quaver, 0), lnote(0, 2 * quaver, -5), lnote(0, 2* quaver, -9)],t);
+  return polyphonic(square, [note(0, 2 * quaver, 0), note(0, 2 * quaver, -5), note(0, 2* quaver, -9)],t);
 }
